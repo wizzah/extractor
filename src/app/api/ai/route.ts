@@ -7,6 +7,8 @@ const client = new OpenAI({
 });
 
 export async function POST (req: NextRequest) {
+    const data = await req.json();
+    console.log("REQ", data);
     let completion;
     try {
         completion = await client.chat.completions.create({
@@ -15,7 +17,7 @@ export async function POST (req: NextRequest) {
                 { role: "system", content: "You are a helpful assistant." },
                 {
                     role: "user",
-                    content: "Write a haiku about recursion in programming.",
+                    content: "I am going to give you some text that I would like to be processed. Summary will be a summary of the text, entities will be a list of personally identifiable information in the text, and outline will be breaking the content into sections. I'd like to receive the data in an object that looks like { 'summary': 'Document summary...', 'entities': ['entity1', 'entity2'], 'outline': {'section 1': ['point 1', 'point 2'], 'section 2': ['point 1', 'point 2']}}. Thanks! Here is the text: " + data.inputText,
                 },
             ],
         });
