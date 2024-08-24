@@ -2,54 +2,83 @@
 
 import Head from 'next/head';
 import styles from '../styles/Home.module.css';
-import { callAIWithInput } from '../scripts/ai';
+import { batchAICalls, buildResultJson } from '../scripts/utils';
+import { ChunkData, ExtractedJson } from '../types';
 import React, { useState } from 'react';
 
 export default function Home() {
 
-  const [file, setFile] = useState();
-  const [resultJSON, setResultJSON] = useState<string[]>([]);
+  const [resultJSON, setResultJSON] = useState<ExtractedJson>();
   const [errors, setErrors] = useState<string[]>([]);
-  const [chunking, setChunking] = useState(false);
+  const [chunkData, setChunkData] = useState<ChunkData>();
 
-  function handleSetFile(event) {
+  function handleSetFile(event: React.ChangeEvent<HTMLInputElement>) {
     // validate that this is a .txt file
-    if (event.target && event.target.files[0].name.endsWith(".txt")) {
+    if (event.target && event.target.files?.[0].name.endsWith(".txt")) {
 
       let reader = new FileReader();
+      reader.readAsText(event.target.files[0]);
 
-      // read parts of the file
+      // read the file
       reader.onload = function(event) {
 
         if (event && event.target) {
-          // parse title
-          let result = String(event.target?.result);
+          // parse just the title
+          let result = String(event.target.result);
           const title = result.split("\n")[0];
 
-          setChunking(true);
-  
-          callAIWithInput(String(event.target.result), title).then((result) => {
+          // figure out total batches
+          // chunk by the demarcator, the title
+          let queryString = String(event.target.result).split(title);
+
+          // remove any empty strings from splitting the input, and indicate which ones are too big to process.
+          queryString = queryString.filter((listItem, index) => {
+
+            // current character limit for chatGPT is 4096
+            if (listItem.length > 4096) {
+              // index + 1 to help when someone is debugging a document and checking the chunks themselves.
+              errors.push("Batch too large, number " + (index + 1));
+              return false;
+            }
+
+            // remove empty strings from splitting
+            if (listItem.length === 0) {
+              return false;
+            }
+
+            return listItem;
+          });
+
+          console.log("queryString", queryString);
+
+          setChunkData({
+            totalChunks: queryString.length,
+            chunkProgress: 0,
+            activeProcessing: false,
+            rateLimitTime: (queryString.length / 3)
+          })
+
+          // break into chunks to separate document to send to ai
+          batchAICalls(queryString).then((result) => {
             console.log("Result in callback", result);
             let errors = result[1];
-            console.log("errors", errors);
-            setChunking(false);
-            setResultJSON(result[0]);
+            
+            // if there's resulting JSON, build out a final JSON
+            if (result[0].length > 0) {
+              buildResultJson(title, result[0]).then((result) => {
+                setResultJSON(result);
+              }).catch((err) => {
+                errors.push("Error creating final JSON: " + err);
+              })
+            }
           });
         }
 
       }
-
-      reader.readAsText(event.target.files[0]);
-  
   
     } else {
-      // errorstate
+      errors.push("Filetype is not a txt file");
     }
-  }
-  
-  function handleSubmit(event) {
-    // parse file
-  
   }
 
   return (
@@ -63,22 +92,38 @@ export default function Home() {
         <h1 className={styles.title}>
           Extract file contents
         </h1>
-        <form method="post" encType="multipart/form-data" onSubmit={handleSubmit}>
+        <form method="post" encType="multipart/form-data">
           <div>
             <label htmlFor="file">Choose txt file to upload</label>
             <input type="file" id="file" name="file" accept=".txt" onChange={(event) => handleSetFile(event)} />
           </div>
         </form>
-          { chunking ? (
-            <div>Processing...this could take a while due to rate limiting from chatGPT (3 calls a minute).</div>
-          ) : 
-          (
-            <div>Errors: <br />
-            {errors.length === 0 ? <span>Woohoo, no errors :)</span> : errors}
-            <br /> Chunked Results: <br /><pre id="results">{resultJSON}</pre></div>
-          )
-        }
-        
+
+        <div className={styles.informational}>
+          { chunkData ? 
+            <div>This file will be split into {chunkData.totalChunks} and processed. Due to rate limiting, this could take {Math.floor(chunkData.rateLimitTime)} minutes Proceed?</div>
+          : <></>}
+        </div>
+
+        <div className={styles.processing}>
+          { chunkData && chunkData.activeProcessing ? (
+              <div>Processing...this could take a while due to rate limiting from chatGPT (3 calls a minute). 😢</div>
+            ) : 
+            <>
+              <div className={styles.leftColumn}>
+                Chunked Results: <br />
+                <div><pre className={styles.result}>{JSON.stringify(resultJSON)}</pre></div>
+              </div>
+
+              <div className={styles.rightColumn}>
+                Errors: <br />
+                  {errors.length === 0 ? <span>No errors to report so far.</span> : errors}
+                  <br /> 
+              </div>
+            </>
+          }
+
+        </div>
       </main>
 
       <footer>
