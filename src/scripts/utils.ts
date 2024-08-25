@@ -1,23 +1,23 @@
 import pThrottle from "p-throttle";
-import { ExtractedJson } from "../types";
+import { ChunkData, ExtractedJson } from "../types";
+import { INTERVAL, THROTTLE } from "../constants";
+import { Dispatch, SetStateAction } from "react";
 
-export async function batchAICalls(inputText: string[]) {
+export async function batchAICalls(title: string, inputText: string[], setBatchNumber: Dispatch<SetStateAction<ChunkData | undefined>>, setErrors: React.Dispatch<React.SetStateAction<string[]>>) {
     // list of all queries we will be running to build final JSON
-    let queryList: any[] = [];
+    // The type here comes from the throttled method we're using
+    let queryList: Promise<{ role: string; content: string; refusal: null; } | undefined>[] = [];
 
     // list of JSONs we will be asking the AI to combine
-    let jsonList: any[] = [];
-
-    // Any issues get added into here
-    let errorList: any[] = [];
+    let jsonList: string[] = [];
 
     // limit number of concurrent requests, we will limit to 3 here. chatGPT limits us to 3 every 60s
     const throttle = pThrottle({
-        limit: 3,
-        interval: 60000
+        limit: THROTTLE,
+        interval: INTERVAL
     });
 
-    const throttled = throttle(async (queryString) => {
+    const throttled = throttle(async (queryString, index) => {
         // rate limited, so use dummy data for now
         const response = await fetch(process.env.NEXT_PUBLIC_URL + '/api/ai', {
             method: 'POST',
@@ -27,27 +27,37 @@ export async function batchAICalls(inputText: string[]) {
             }
         });
 
+        setBatchNumber(prevState => {
+            if (prevState) {
+              return {...prevState, batchNumber: index + 1}
+            }
+          });
+
+        // return Promise.resolve(getExampleResponse());
         return Promise.resolve(response.json());
-        // return Promise.resolve(exampleResponse);
+
     });
 
     // throttle the requests so we aren't instantly rate-limited
-    for (var i = 0; i < 5; i++) {
-        queryList.push(throttled(inputText[i]));
+    for (var i = 0; i < 10; i++) {
+        queryList.push(throttled(inputText[i], i));
     }
 
     await Promise.all(queryList).then((values) => {
         for (var i = 0; i < values.length; i++) {
-            jsonList.push(values[i].content);
+            jsonList.push(values[i]!.content);
         }
     }).catch((err) => {
-        errorList.push(err);
+        console.log("ERR", err);
+        // setErrors(prevState => {
+        //     return prevState ? [...prevState, err] : [err];
+        // });
     })
 
-    return [jsonList, errorList];
+    return jsonList;
 }
 
-export async function buildResultJson(title: string, jsonObjs: ExtractedJson[]) {
+export async function buildResultJson(title: string, jsonObjs: string[]) {
     let finalJson: ExtractedJson = {
         title: title,
         entities: [],

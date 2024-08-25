@@ -11,7 +11,9 @@ export type ExtractedJson = {
 
 export type ChunkData = {
     totalChunks: number,
-    chunkProgress: number,
     activeProcessing: boolean,
-    rateLimitTime: number
+    rateLimitTime: number,
+    title: string,
+    queryString: string[],
+    batchNumber: number
   }
