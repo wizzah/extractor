@@ -4,7 +4,7 @@ import Head from 'next/head';
 import styles from '../styles/Home.module.css';
 import { batchAICalls, buildResultJson } from '../scripts/utils';
 import { ChunkData, ExtractedJson } from '../types';
-import { AI_CHAR_LIMIT, INTERVAL, THROTTLE } from "../constants";
+import { AI_CHAR_LIMIT, THROTTLE } from "../constants";
 import React, { useState } from 'react';
 
 export default function Home() {
@@ -21,22 +21,20 @@ export default function Home() {
     });
 
     // send chunks to ai
-    batchAICalls(chunkData!.title, chunkData!.queryString, setChunkData, setErrors).then((result) => {
-      console.log("Result in callback", result);
-      
+    batchAICalls(chunkData!.queryString, setChunkData, setErrors).then((result) => {
       // if there's resulting JSON, build out a final JSON
       if (result.length > 0) {
-        buildResultJson(chunkData!.title, result).then((result) => {
+        buildResultJson(chunkData!.title, result, setErrors).then((result) => {
           setResultJSON(result);
         }).catch((err) => {
-          console.log("ERR2", err);
-          // setErrors(prevState => {
-          //   return prevState ? [...prevState, err] : [err];
-          // });
+          const error = "Error building final result JSON.";
+          setErrors(prevState => {
+            return prevState ? [...prevState, error] : [error];
+          });
         })
       } else {
         setErrors(prevState => {
-          const errorMsg = "Error occurred creating final JSON.";
+          const errorMsg = "Error occurred with the batched AI calls.";
           return prevState ? [...prevState, errorMsg] : [errorMsg];
         });
       }
@@ -45,10 +43,11 @@ export default function Home() {
 
   function handleSetFile(event: React.ChangeEvent<HTMLInputElement>) {
     // validate that this is a .txt file
-    if (event.target && event.target.files?.[0].name.endsWith(".txt")) {
+    const targetFile = event.target.files?.[0];
+    if (event.target && targetFile && targetFile.name.endsWith(".txt")) {
 
       let reader = new FileReader();
-      reader.readAsText(event.target.files[0]);
+      reader.readAsText(targetFile);
 
       // read the file
       reader.onload = function(event) {
@@ -77,7 +76,6 @@ export default function Home() {
                 const errorMsg = `Batch number ${index + 1} was too large to query with. `;
                 return prevState ? [...prevState, errorMsg] : [errorMsg];
               });
-              // errors.push("Batch too large, number " + (index + 1));
               return false;
             }
 
@@ -89,12 +87,10 @@ export default function Home() {
             return listItem;
           });
 
-          let intervalInMin = INTERVAL / 1000;
-
           setChunkData({
             totalChunks: fileString.length,
             activeProcessing: false,
-            rateLimitTime: Math.floor(((fileString.length / THROTTLE) * intervalInMin) / 100),
+            rateLimitTime: Math.floor(fileString.length / THROTTLE),
             title: title,
             queryString: fileString,
             batchNumber: 0
@@ -104,7 +100,7 @@ export default function Home() {
       }
   
     } else {
-      errors.push("Filetype is not a txt file");
+      errors.push("Filetype is not a txt file.");
     }
   }
 
@@ -113,60 +109,62 @@ export default function Home() {
       <Head>
         <title>Extract file</title>
       </Head>
+      <div id={styles.informational}>
+          <h1 className={styles.title}>
+            Extract file contents
+          </h1>
 
-      <main>
-
-        <h1 className={styles.title}>
-          Extract file contents
-        </h1>
-
-        <form method="post" encType="multipart/form-data">
           <div>
-            <label htmlFor="file">Choose txt file to upload</label>
-            <input type="file" id="file" name="file" accept=".txt" onChange={(event) => handleSetFile(event)} />
-            <br />
+            <form id={styles.form} method="post" encType="multipart/form-data">
+              <div>
+                <label htmlFor="file" className={styles.fileUploadLabel}>Choose txt file to upload:
+                  <input id={styles.file} type="file" name="file" accept=".txt" onChange={(event) => handleSetFile(event)} />
+                </label>
+                <br />
+              </div>
+            </form>
           </div>
-        </form>
 
-        <div className={styles.informational}>
-          { chunkData && 
-            <>
-              <div>This file will be split into {chunkData.totalChunks} chunks and processed. Due to rate limiting, 
-                this could take {chunkData.rateLimitTime} minutes.
-                { !chunkData.activeProcessing && <button onClick={handleBatches}>Continue</button>}
-                </div>
-                <div>{chunkData.activeProcessing}</div>
-              <br />
-              { chunkData.activeProcessing == true && <p>Completed {chunkData.batchNumber}/{chunkData.totalChunks} batches.</p> }
-            </>
-          }
+            <div>
+            { chunkData && 
+              <>
+                <div>This file will be split into <strong>{chunkData.totalChunks}</strong> chunks and processed. Due to rate limiting, 
+                  this could take about <strong>{chunkData.rateLimitTime} minutes.</strong>
+                  { !chunkData.activeProcessing && <button id={styles.continueButton} onClick={handleBatches}>Continue</button>}
+                  </div>
+                  <div>{chunkData.activeProcessing}</div>
+                <br />
+                { chunkData.activeProcessing == true && <div>Completed <strong>{chunkData.batchNumber}/{chunkData.totalChunks}</strong> batches.</div> }
+              </>
+            }
+          </div>
         </div>
 
-        <div className={styles.processing}>
+        <div id={styles.processing}>
           { chunkData && chunkData.activeProcessing && 
             (
               <>
               <div className={styles.leftColumn}>
                 Results: <br />
-                <div><pre className={styles.result}>{JSON.stringify(resultJSON)}</pre></div>
+                {resultJSON == undefined && ("Pending...")}
+                <div><pre className={styles.result}>{JSON.stringify(resultJSON, null, 3)}</pre></div>
               </div>
 
               <div className={styles.rightColumn}>
                 Errors: <br />
-                  {errors.length === 0 ? <span>No errors to report so far.</span> : errors}
+                  {
+                    errors.length === 0 ? <span>No errors to report so far.</span> : 
+                    <ul>
+                      {errors.map((err, i) => <li key={i}>{err}</li>)}
+                    </ul>
+                  }
                   <br /> 
               </div>
             </>
             )
-
           }
 
         </div>
-      </main>
-
-      <footer>
-      </footer>
-
     </div>
   );
 }

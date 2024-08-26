@@ -4,9 +4,10 @@
 - npm run build && npm run start to run the project with the keys
 
 Extra info:
-- This project uses NextJS and Vercel
-- Other good TODOs would be to add tests, flexibility between which AI services can be used, a flag for rate limiting or not, create an easy way to copy the result JSON, track the rate limiting
+- This project uses NextJS, React, and chatGPT
+- Other good TODOs would be to add tests, flexibility between which AI services can be used, a flag for rate limiting or not, create an easy way to copy the result JSON (a button in the corner), track the rate limiting
 
 Thought Process:
 - For the uploaded files, I'm assuming we always have some kind of demarcation for chunking. For example, the given test file repeats "Chart Notes".
 - Normally I would use a store to track displaying chunk progress and errors, but setting up a store would be overkill here.
+- Parsing results from chatGPT is imperfect because it will sometimes return extra text around a JSON object.

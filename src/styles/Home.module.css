@@ -1,40 +1,20 @@
 .container {
-  min-height: 100vh;
   padding: 0 0.5rem;
-  display: flex;
-  flex-direction: column;
-  /* justify-content: center; */
-  align-items: center;
+  display: grid;
+  justify-content: center;
+  grid-template-columns: 65%;
 }
 
 .title {
   margin: 0 0 1rem;
   line-height: 1.15;
   font-size: 3.6rem;
-}
-
-.title {
   text-align: center;
 }
 
-.title,
-.description {
-  text-align: center;
-}
-
-.description {
-  line-height: 1.5;
-  font-size: 1.5rem;
-}
-
-.grid {
-  display: flex;
+#informational {
   align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-
-  max-width: 800px;
-  margin-top: 3rem;
+  margin-top: 10px;
 }
 
 .result {
@@ -47,11 +27,38 @@
 }
 
 .leftColumn {
-  width: 50%;
+  padding: 15px;
+  background: #313638;
+  color: #4CBDBB;
 }
 
 .rightColumn {
-  width: 50%;
+  padding: 15px;
+  background: #DBB1BC;
+}
+
+#form {
+  padding: 10px 0px 10px 0px;
+}
+
+#file::file-selector-button, #continueButton {
+  background: #4cbdbb;
+  padding: 5px;
+  border-radius: 2px;
+  border: none;
+  margin: 10px;
+  cursor: pointer;
+  color: #313638;
+}
+
+#processing {
+  display: grid;
+  grid-template-columns: 2fr 2fr;
+  margin-top: 25px;
+}
+
+.fileUploadLabel {
+  display: inline-block;
 }
 
 @media (max-width: 600px) {
