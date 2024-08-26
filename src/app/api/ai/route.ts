@@ -8,7 +8,6 @@ const client = new OpenAI({
 
 export async function POST (req: NextRequest) {
     const data = await req.json();
-    console.log("REQ", data);
     let completion;
     try {
         completion = await client.chat.completions.create({
@@ -25,7 +24,6 @@ export async function POST (req: NextRequest) {
         return NextResponse.json(completion.choices[0].message, {status: 200});
 
     } catch (error) {
-        console.log("ERROR", error);
         return NextResponse.json(completion, {status: 500});
     }
 
