@@ -28,9 +28,9 @@ export async function batchAICalls(inputText: string[], setBatchNumber: Dispatch
 
         setBatchNumber(prevState => {
             if (prevState) {
-              return {...prevState, batchNumber: index + 1}
+                return { ...prevState, batchNumber: index + 1 }
             }
-          });
+        });
 
         return Promise.resolve(response.json());
 
@@ -67,16 +67,14 @@ export async function buildResultJson(title: string, jsonObjs: string[], setErro
 
     for (var i = 0; i < jsonObjs.length; i++) {
 
-        let stringed = JSON.stringify(jsonObjs[i]);
+        const stringed = JSON.stringify(jsonObjs[i]);
         // remove the spacers \n, replace escaped \" with a regular double quote ", and remove triple backticks
-        let cleanString = stringed.replace(/\\n/g, "").replace(/\\"/g, '"').replace(/```json/g, "").replace(/```/g, "");
+        const cleanString = stringed.replace(/\\n/g, "").replace(/\\"/g, '"').replace(/```json/g, "").replace(/```/g, "");
         // remove extra quotes from beginning and end of JSON string
-        let superCleanString = cleanString.substring(1, cleanString.length - 1);
-
-        let parsed;
+        const superCleanString = cleanString.substring(1, cleanString.length - 1);
 
         try {
-            parsed = JSON.parse(superCleanString);
+            const parsed = JSON.parse(superCleanString);
 
             // remove dupes from entities and add them into the final JSON
             for (var j = 0; j < parsed.entities.length; j++) {

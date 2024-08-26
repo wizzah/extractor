@@ -6,7 +6,7 @@ const client = new OpenAI({
     apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
 });
 
-export async function POST (req: NextRequest) {
+export async function POST(req: NextRequest) {
     const data = await req.json();
     let completion;
     try {
@@ -21,10 +21,10 @@ export async function POST (req: NextRequest) {
             ],
         });
 
-        return NextResponse.json(completion.choices[0].message, {status: 200});
+        return NextResponse.json(completion.choices[0].message, { status: 200 });
 
     } catch (error) {
-        return NextResponse.json(completion, {status: 500});
+        return NextResponse.json(completion, { status: 500 });
     }
 
 }

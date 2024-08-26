@@ -41,7 +41,8 @@
   padding: 10px 0px 10px 0px;
 }
 
-#file::file-selector-button, #continueButton {
+#file::file-selector-button,
+#continueButton {
   background: #4cbdbb;
   padding: 5px;
   border-radius: 2px;

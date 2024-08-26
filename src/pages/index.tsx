@@ -16,7 +16,7 @@ export default function Home() {
   function handleBatches() {
     setChunkData(prevState => {
       if (prevState) {
-        return {...prevState, activeProcessing: true}
+        return { ...prevState, activeProcessing: true }
       }
     });
 
@@ -50,7 +50,7 @@ export default function Home() {
       reader.readAsText(targetFile);
 
       // read the file
-      reader.onload = function(event) {
+      reader.onload = function (event) {
 
         if (event && event.target) {
           // parse just the title
@@ -58,8 +58,8 @@ export default function Home() {
           const title = result.split("\n")[0];
 
           setChunkData(prevState => {
-            if (prevState) { 
-              return {...prevState, title }
+            if (prevState) {
+              return { ...prevState, title }
             }
           });
 
@@ -98,7 +98,7 @@ export default function Home() {
         }
 
       }
-  
+
     } else {
       errors.push("Filetype is not a txt file.");
     }
@@ -110,40 +110,40 @@ export default function Home() {
         <title>Extract file</title>
       </Head>
       <div id={styles.informational}>
-          <h1 className={styles.title}>
-            Extract file contents
-          </h1>
+        <h1 className={styles.title}>
+          Extract file contents
+        </h1>
 
-          <div>
-            <form id={styles.form} method="post" encType="multipart/form-data">
-              <div>
-                <label htmlFor="file" className={styles.fileUploadLabel}>Choose txt file to upload:
-                  <input id={styles.file} type="file" name="file" accept=".txt" onChange={(event) => handleSetFile(event)} />
-                </label>
-                <br />
-              </div>
-            </form>
-          </div>
-
+        <div>
+          <form id={styles.form} method="post" encType="multipart/form-data">
             <div>
-            { chunkData && 
-              <>
-                <div>This file will be split into <strong>{chunkData.totalChunks}</strong> chunks and processed. Due to rate limiting, 
-                  this could take about <strong>{chunkData.rateLimitTime} minutes.</strong>
-                  { !chunkData.activeProcessing && <button id={styles.continueButton} onClick={handleBatches}>Continue</button>}
-                  </div>
-                  <div>{chunkData.activeProcessing}</div>
-                <br />
-                { chunkData.activeProcessing == true && <div>Completed <strong>{chunkData.batchNumber}/{chunkData.totalChunks}</strong> batches.</div> }
-              </>
-            }
-          </div>
+              <label htmlFor="file" className={styles.fileUploadLabel}>Choose txt file to upload:
+                <input id={styles.file} type="file" name="file" accept=".txt" onChange={handleSetFile} />
+              </label>
+              <br />
+            </div>
+          </form>
         </div>
 
-        <div id={styles.processing}>
-          { chunkData && chunkData.activeProcessing && 
-            (
-              <>
+        <div>
+          {chunkData &&
+            <>
+              <div>This file will be split into <strong>{chunkData.totalChunks}</strong> chunks and processed. Due to rate limiting,
+                this could take about <strong>{chunkData.rateLimitTime} minutes.</strong>
+                {!chunkData.activeProcessing && <button id={styles.continueButton} onClick={handleBatches}>Continue</button>}
+              </div>
+              <div>{chunkData.activeProcessing}</div>
+              <br />
+              {chunkData.activeProcessing == true && <div>Completed <strong>{chunkData.batchNumber}/{chunkData.totalChunks}</strong> batches.</div>}
+            </>
+          }
+        </div>
+      </div>
+
+      <div id={styles.processing}>
+        {chunkData && chunkData.activeProcessing &&
+          (
+            <>
               <div className={styles.leftColumn}>
                 Results: <br />
                 {resultJSON == undefined && ("Pending...")}
@@ -152,19 +152,18 @@ export default function Home() {
 
               <div className={styles.rightColumn}>
                 Errors: <br />
-                  {
-                    errors.length === 0 ? <span>No errors to report so far.</span> : 
+                {
+                  errors.length === 0 ? <span>No errors to report so far.</span> :
                     <ul>
                       {errors.map((err, i) => <li key={i}>{err}</li>)}
                     </ul>
-                  }
-                  <br /> 
+                }
               </div>
             </>
-            )
-          }
+          )
+        }
 
-        </div>
+      </div>
     </div>
   );
 }
